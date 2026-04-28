@@ -4,8 +4,9 @@ import path from "path";
 export default defineConfig({
   test: {
     environment: "jsdom",
-    globals: true,
     setupFiles: "./tests/setup.ts",
+    globals: true,
+    threads: false, 
   },
   resolve: {
     alias: {

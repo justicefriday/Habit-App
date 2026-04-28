@@ -8,17 +8,13 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const session = localStorage.getItem("habit-tracker-session");
+    const session = localStorage.getItem("habit-tracker-session");
 
-      if (session) {
-        router.push("/dashboard");
-      } else {
-        router.push("/login");
-      }
-    }, 1000); // 1 second delay
-
-    return () => clearTimeout(timer);
+    if (session) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
   }, [router]);
 
   return <SplashScreen />;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Habit } from "@/types/habit";
 import { getHabitSlug } from "@/lib/slug";
 import { toggleHabitCompletion } from "@/lib/habits";
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function HabitCard({ habit, onUpdate }: Props) {
-  const slug = getHabitSlug(habit.name);
+  const slug = useMemo(() => getHabitSlug(habit.name), [habit.name]);
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(habit.name);
@@ -21,21 +21,37 @@ export default function HabitCard({ habit, onUpdate }: Props) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // ✅ TOGGLE COMPLETE
+  const isCompletedToday = habit.completions?.includes(today);
+
+  const streak = useMemo(
+    () => calculateCurrentStreak(habit.completions || []),
+    [habit.completions]
+  );
+
+  // ✅ TOGGLE COMPLETE (FIXED FOR E2E)
   const handleToggle = () => {
     const habits = JSON.parse(
       localStorage.getItem("habit-tracker-habits") || "[]"
     );
 
-    const updated = habits.map((h: Habit) =>
-      h.id === habit.id ? toggleHabitCompletion(h, today) : h
+    const updated = habits.map((h: Habit) => {
+      if (h.id === habit.id) {
+        const newHabit = toggleHabitCompletion(h, today);
+        return { ...newHabit };
+      }
+      return h;
+    });
+
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify(updated)
     );
 
-    localStorage.setItem("habit-tracker-habits", JSON.stringify(updated));
+    // IMPORTANT: force UI refresh immediately
     onUpdate();
   };
 
-  // ✅ SAVE EDIT
+  // ✅ SAVE EDIT (FIXED)
   const handleSave = () => {
     const habits = JSON.parse(
       localStorage.getItem("habit-tracker-habits") || "[]"
@@ -45,18 +61,23 @@ export default function HabitCard({ habit, onUpdate }: Props) {
       h.id === habit.id
         ? {
             ...h,
-            name,
-            description,
+            name: name.trim(),
+            description: description.trim(),
           }
         : h
     );
 
-    localStorage.setItem("habit-tracker-habits", JSON.stringify(updated));
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify(updated)
+    );
+
     setEditing(false);
+
     onUpdate();
   };
 
-  // ✅ DELETE
+  // ✅ DELETE (UNCHANGED BUT SAFE)
   const handleDelete = () => {
     const habits = JSON.parse(
       localStorage.getItem("habit-tracker-habits") || "[]"
@@ -64,12 +85,13 @@ export default function HabitCard({ habit, onUpdate }: Props) {
 
     const updated = habits.filter((h: Habit) => h.id !== habit.id);
 
-    localStorage.setItem("habit-tracker-habits", JSON.stringify(updated));
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify(updated)
+    );
+
     onUpdate();
   };
-
-  const streak = calculateCurrentStreak(habit.completions);
-  const isCompletedToday = habit.completions.includes(today);
 
   return (
     <div
@@ -82,27 +104,39 @@ export default function HabitCard({ habit, onUpdate }: Props) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="border p-1"
+            data-testid={`edit-name-${slug}`}
           />
+
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="border p-1"
+            data-testid={`edit-desc-${slug}`}
           />
-          <button onClick={handleSave} className="bg-black text-white p-1">
+
+          <button
+            onClick={handleSave}
+            className="bg-black text-white p-1"
+            data-testid={`save-${slug}`}
+          >
             Save
           </button>
         </>
       ) : (
         <>
           <h2 className="font-bold">{habit.name}</h2>
-          <p className="text-sm text-gray-500">{habit.description}</p>
+          <p className="text-sm text-gray-500">
+            {habit.description}
+          </p>
         </>
       )}
 
+      {/* STREAK (FIXED REACTIVITY) */}
       <div data-testid={`habit-streak-${slug}`}>
         Streak: {streak}
       </div>
 
+      {/* COMPLETE BUTTON */}
       <button
         data-testid={`habit-complete-${slug}`}
         onClick={handleToggle}
