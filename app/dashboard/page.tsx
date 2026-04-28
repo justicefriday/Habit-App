@@ -1,6 +1,7 @@
 "use client";
 
 import HabitForm from "@/components/habits/HabitForm";
+import HabitCard from "@/components/habits/HabitCard";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -67,6 +68,19 @@ export default function DashboardPage() {
           Welcome, {session?.email}
         </h1>
 
+
+
+<button
+  data-testid="auth-logout-button"
+  onClick={() => {
+    localStorage.removeItem("habit-tracker-session");
+    router.push("/login");
+  }}
+  className="w-full bg-black text-white px-4 py-2 mb-4 rounded"
+>
+  Logout
+</button>
+
         {/* CREATE BUTTON */}
         <button
           data-testid="create-habit-button"
@@ -92,19 +106,15 @@ export default function DashboardPage() {
         )}
 
         {/* HABITS LIST */}
-        <div className="flex flex-col gap-2 mt-4">
-          {habits.map((habit) => (
-            <div
-              key={habit.id}
-              className="border p-2 rounded"
-            >
-              <h2 className="font-bold">{habit.name}</h2>
-              <p className="text-sm text-gray-500">
-                {habit.description}
-              </p>
-            </div>
-          ))}
-        </div>
+       <div className="flex flex-col gap-3 mt-4">
+  {habits.map((habit) => (
+    <HabitCard
+      key={habit.id}
+      habit={habit}
+      onUpdate={loadHabits}
+    />
+  ))}
+</div>
       </div>
     </div>
   );
