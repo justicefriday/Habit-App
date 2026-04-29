@@ -42,12 +42,9 @@ export default function LoginForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 w-full max-w-sm"
-    >
+    <form className="flex flex-col gap-4 w-full max-w-sm" onSubmit={handleSubmit}>
       <input
-        data-testid="auth-login-email"
+        data-testid="auth-login-email"   // ✅ FIXED
         type="email"
         placeholder="Email"
         className="border p-2"
@@ -56,7 +53,7 @@ export default function LoginForm() {
       />
 
       <input
-        data-testid="auth-login-password"
+        data-testid="auth-login-password" // ✅ FIXED
         type="password"
         placeholder="Password"
         className="border p-2"
@@ -64,9 +61,7 @@ export default function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      {error && (
-        <p className="text-red-500 text-sm">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <button
         data-testid="auth-login-submit"

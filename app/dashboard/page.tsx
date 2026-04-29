@@ -8,26 +8,22 @@ import { useRouter } from "next/navigation";
 export default function DashboardPage() {
   const router = useRouter();
 
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<{
-    userId: string;
-    email: string;
-  } | null>(null);
-
   const [habits, setHabits] = useState<any[]>([]);
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
 
-  // Load habits for logged-in user
   const loadHabits = () => {
     const sessionRaw = localStorage.getItem("habit-tracker-session");
     if (!sessionRaw) return;
 
     const sessionData = JSON.parse(sessionRaw);
 
-    const habitsRaw = localStorage.getItem("habit-tracker-habits");
-    const allHabits = habitsRaw ? JSON.parse(habitsRaw) : [];
+    const all = JSON.parse(
+      localStorage.getItem("habit-tracker-habits") || "[]"
+    );
 
-    const userHabits = allHabits.filter(
+    const userHabits = all.filter(
       (h: any) => h.userId === sessionData.userId
     );
 
@@ -38,86 +34,63 @@ export default function DashboardPage() {
     const sessionRaw = localStorage.getItem("habit-tracker-session");
 
     if (!sessionRaw) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
-    const parsedSession = JSON.parse(sessionRaw);
+    const parsed = JSON.parse(sessionRaw);
 
-    setSession(parsedSession);
+    setSession(parsed);
     loadHabits();
     setLoading(false);
-  }, [router]);
 
-  const handleHabitCreated = () => {
-    loadHabits();      // refresh list
-    setShowForm(false); // close form
-  };
+    const sync = () => loadHabits();
+    window.addEventListener("habit-updated", sync);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+    return () => window.removeEventListener("habit-updated", sync);
+  }, []);
+
+  if (loading) return <div data-testid="dashboard-loading">Loading...</div>;
 
   return (
-    <div
-      data-testid="dashboard-page"
-      className="min-h-screen flex flex-col items-center p-4"
-    >
-      <div className="w-full max-w-md">
-        <h1 className="text-xl font-bold mb-4 text-center">
-          Welcome, {session?.email}
-        </h1>
+    <div data-testid="dashboard-page">
+      <h1>Welcome, {session?.email}</h1>
 
+      <button
+        data-testid="auth-logout-button"
+        onClick={() => {
+          localStorage.removeItem("habit-tracker-session");
+          router.replace("/login");
+        }}
+      >
+        Logout
+      </button>
 
+      <button
+        data-testid="create-habit-button"
+        onClick={() => setShowForm(true)}
+      >
+        Create Habit
+      </button>
 
-<button
-  data-testid="auth-logout-button"
-  onClick={() => {
-    localStorage.removeItem("habit-tracker-session");
-    router.push("/login");
-  }}
-  className="w-full bg-black text-white px-4 py-2 mb-4 rounded"
->
-  Logout
-</button>
+      {showForm && (
+        <div data-testid="habit-form-wrapper">
+          <HabitForm
+            onCreate={() => {
+              loadHabits();
+              setShowForm(false); // IMPORTANT FIX
+            }}
+          />
+        </div>
+      )}
 
-        {/* CREATE BUTTON */}
-        <button
-          data-testid="create-habit-button"
-          onClick={() => setShowForm(!showForm)}
-          className="w-full bg-blue-500 text-white px-4 py-2 mb-4 rounded"
-        >
-          Create Habit
-        </button>
+      {habits.length === 0 && (
+        <div data-testid="empty-state">No habits yet. Create one!</div>
+      )}
 
-        {/* FORM */}
-        {showForm && (
-          <HabitForm onCreate={handleHabitCreated} />
-        )}
-
-        {/* EMPTY STATE */}
-        {habits.length === 0 && (
-          <div
-            data-testid="empty-state"
-            className="text-center text-gray-500 mt-4"
-          >
-            No habits yet. Create one!
-          </div>
-        )}
-
-        {/* HABITS LIST */}
-       <div className="flex flex-col gap-3 mt-4">
-  {habits.map((habit) => (
-    <HabitCard
-      key={habit.id}
-      habit={habit}
-      onUpdate={loadHabits}
-    />
-  ))}
-</div>
-      </div>
-
-      
+      {habits.map((h) => (
+        <HabitCard key={h.id} habit={h} onUpdate={loadHabits} />
+      ))}
     </div>
   );
 }

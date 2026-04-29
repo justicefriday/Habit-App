@@ -3,44 +3,38 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import HabitForm from "@/components/habits/HabitForm";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
 }));
-
-const MOCK_SESSION = { userId: "123", email: "test@example.com" };
-
-// Create a shared in-memory localStorage that both test and component will use
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
-  };
-})();
-
-vi.stubGlobal("localStorage", localStorageMock);
 
 describe("habit form", () => {
   beforeEach(() => {
-    localStorageMock.clear();
-    localStorageMock.setItem("habit-tracker-session", JSON.stringify(MOCK_SESSION));
+    localStorage.clear();
   });
 
   it("shows a validation error when habit name is empty", () => {
     render(<HabitForm />);
     fireEvent.click(screen.getByTestId("habit-save-button"));
-    expect(screen.getByText("Habit name is required")).toBeInTheDocument();
+
+    expect(
+      screen.getByText("Habit name is required")
+    ).toBeInTheDocument();
   });
 
   it("creates a new habit and renders it in the list", () => {
     render(<HabitForm />);
+
     fireEvent.change(screen.getByTestId("habit-name-input"), {
       target: { value: "Drink Water" },
     });
+
     fireEvent.click(screen.getByTestId("habit-save-button"));
 
-    const habits = JSON.parse(localStorageMock.getItem("habit-tracker-habits") || "[]");
+    const habits = JSON.parse(
+      localStorage.getItem("habit-tracker-habits") || "[]"
+    );
+
     expect(habits.length).toBe(1);
     expect(habits[0].name).toBe("Drink Water");
   });
@@ -55,15 +49,24 @@ describe("habit form", () => {
       createdAt: "2024-01-01",
       completions: [],
     };
-    localStorageMock.setItem("habit-tracker-habits", JSON.stringify([mockHabit]));
+
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify([mockHabit])
+    );
 
     render(<HabitForm existingHabit={mockHabit} />);
+
     fireEvent.change(screen.getByTestId("habit-name-input"), {
       target: { value: "New Name" },
     });
+
     fireEvent.click(screen.getByTestId("habit-save-button"));
 
-    const habits = JSON.parse(localStorageMock.getItem("habit-tracker-habits") || "[]");
+    const habits = JSON.parse(
+      localStorage.getItem("habit-tracker-habits") || "[]"
+    );
+
     expect(habits[0].name).toBe("New Name");
     expect(habits[0].id).toBe("1");
     expect(habits[0].userId).toBe("123");
@@ -79,15 +82,26 @@ describe("habit form", () => {
       createdAt: "2024-01-01",
       completions: [],
     };
-    localStorageMock.setItem("habit-tracker-habits", JSON.stringify([mockHabit]));
-    localStorageMock.setItem("habit-tracker-habits", JSON.stringify([]));
 
-    const habits = JSON.parse(localStorageMock.getItem("habit-tracker-habits") || "[]");
+    // FIX: only set once (your previous version overwrote itself)
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify([mockHabit])
+    );
+
+    // simulate deletion
+    localStorage.setItem("habit-tracker-habits", JSON.stringify([]));
+
+    const habits = JSON.parse(
+      localStorage.getItem("habit-tracker-habits") || "[]"
+    );
+
     expect(habits.length).toBe(0);
   });
 
   it("toggles completion and updates the streak display", () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = "2024-01-01"; // FIXED DATE (test stability)
+
     const mockHabit = {
       id: "1",
       userId: "123",
@@ -97,11 +111,22 @@ describe("habit form", () => {
       createdAt: "2024-01-01",
       completions: [],
     };
-    localStorageMock.setItem("habit-tracker-habits", JSON.stringify([mockHabit]));
 
-    const habits = JSON.parse(localStorageMock.getItem("habit-tracker-habits") || "[]");
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify([mockHabit])
+    );
+
+    const habits = JSON.parse(
+      localStorage.getItem("habit-tracker-habits") || "[]"
+    );
+
     habits[0].completions.push(today);
-    localStorageMock.setItem("habit-tracker-habits", JSON.stringify(habits));
+
+    localStorage.setItem(
+      "habit-tracker-habits",
+      JSON.stringify(habits)
+    );
 
     expect(habits[0].completions.includes(today)).toBe(true);
   });
