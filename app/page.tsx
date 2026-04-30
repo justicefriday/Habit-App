@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -9,14 +10,13 @@ export default function HomePage() {
 
   useLayoutEffect(() => {
     const session = localStorage.getItem("habit-tracker-session");
-
     setTimeout(() => {
       if (session) {
         router.replace("/dashboard");
       } else {
         router.replace("/login");
       }
-    }, 1000); // raised from 300ms to 1000ms — within the required 800–2000ms window
+    }, 1000);
   }, [router]);
 
   return <SplashScreen />;

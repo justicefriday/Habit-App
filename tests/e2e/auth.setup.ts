@@ -1,18 +1,17 @@
-import { test as setup } from "@playwright/test";
+import { test as setup, expect } from "@playwright/test";
+import path from "path";
+
+const authFile = path.join(__dirname, "../.auth/user.json");
 
 setup("seed user", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/signup");
 
-  await page.evaluate(() => {
-    const user = {
-      id: "test-user-id",
-      email: "test@mail.com",
-      password: "123456",
-    };
+  await page.fill('[data-testid="auth-signup-email"]', "test@mail.com");
+  await page.fill('[data-testid="auth-signup-password"]', "123456");
+  await page.click('[data-testid="auth-signup-submit"]');
 
-    localStorage.setItem(
-      "habit-tracker-users",
-      JSON.stringify([user])
-    );
-  });
+  await page.waitForURL("/dashboard");
+
+  // Save the storage state (localStorage session) for other tests to reuse
+  await page.context().storageState({ path: authFile });
 });

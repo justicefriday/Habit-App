@@ -1,7 +1,11 @@
 import { defineConfig } from "@playwright/test";
+import path from "path";
+
+const authFile = path.join(__dirname, "tests/.auth/user.json");
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  timeout: 30000,
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
@@ -10,7 +14,6 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3000",
   },
-
   projects: [
     {
       name: "setup",
@@ -18,7 +21,11 @@ export default defineConfig({
     },
     {
       name: "e2e",
-      dependencies: ["setup"], 
+      dependencies: ["setup"],
+      use: {
+        // All e2e tests start with the seeded logged-in session
+        storageState: authFile,
+      },
     },
   ],
 });
